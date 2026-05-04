@@ -92,7 +92,7 @@ export default function Footer() {
             const Icon = seal.icon;
             return (
               <motion.div
-                key={index}
+                key={`seal-${seal.label}-${index}`}
                 variants={itemVariants}
                 className="text-center"
               >
@@ -129,7 +129,7 @@ export default function Footer() {
           {/* Links */}
           {footerLinks.map((section, index) => (
             <motion.div
-              key={index}
+              key={`section-${section.title}-${index}`}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -140,7 +140,7 @@ export default function Footer() {
               </h3>
               <ul className="space-y-3">
                 {section.links.map((link, linkIndex) => (
-                  <li key={linkIndex}>
+                  <li key={`link-${section.title}-${link.label}-${linkIndex}`}>
                     <motion.a
                       href={link.href}
                       whileHover={{ x: 4 }}

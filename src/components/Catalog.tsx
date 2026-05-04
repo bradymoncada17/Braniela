@@ -1,17 +1,22 @@
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
-import { products } from '@/data/products';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useFirebase, type Product } from '@/contexts/FirebaseContext';
+import { ProductDetailModal } from './ProductDetailModal';
 
 interface ProductCardProps {
-  product: (typeof products)[0];
+  product: Product;
+  onProductClick: (product: Product) => void;
 }
 
-function ProductCard({ product }: ProductCardProps) {
+function ProductCard({ product, onProductClick }: ProductCardProps) {
   const whatsappMessage = `Hola Braniela, me interesa el perfume ${product.name} de ${product.brand}. Me gustaría conocer más detalles y disponibilidad.`;
   const whatsappLink = `https://wa.me/3041100640?text=${encodeURIComponent(whatsappMessage)}`;
 
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+  const price = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+  const originalPrice = typeof product.originalPrice === 'string' ? parseFloat(product.originalPrice) : product.originalPrice;
+  
+  const discount = originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
   return (
     <motion.div
@@ -55,12 +60,12 @@ function ProductCard({ product }: ProductCardProps) {
 
         {/* Description */}
         <p className="text-sm text-foreground/70 font-light mb-4 line-clamp-2">
-          {product.description}
+          {product.description || 'Perfume de lujo de alta calidad'}
         </p>
 
         {/* Volume */}
         <p className="text-xs text-foreground/60 font-light mb-4">
-          Volumen: {product.volume}
+          Volumen: {product.volume || 'N/A'}
         </p>
 
         {/* Notes (if available) */}
@@ -90,28 +95,26 @@ function ProductCard({ product }: ProductCardProps) {
         {/* Price */}
         <div className="mb-6 flex items-baseline gap-3">
           <span className="text-2xl font-light text-foreground">
-            ${product.price.toLocaleString()}
+            ${price.toLocaleString()}
           </span>
-          {product.originalPrice > product.price && (
+          {originalPrice > price && (
             <span className="text-sm text-foreground/50 line-through">
-              ${product.originalPrice.toLocaleString()}
+              ${originalPrice.toLocaleString()}
             </span>
           )}
         </div>
 
         {/* Button */}
         <div className="flex gap-3">
-          <motion.a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
+          <motion.button
+            onClick={() => onProductClick(product)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-sm font-medium text-sm transition-all duration-300 hover:shadow-lg"
+            className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-sm font-medium text-sm transition-all duration-300 hover:shadow-lg"
           >
             <MessageCircle size={16} />
-            Comprar
-          </motion.a>
+            Ver Detalles
+          </motion.button>
         </div>
       </div>
     </motion.div>
@@ -119,11 +122,18 @@ function ProductCard({ product }: ProductCardProps) {
 }
 
 export default function Catalog() {
+  const { products: firestoreProducts } = useFirebase();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [filteredProducts, setFilteredProducts] = useState(products);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  // Sincronizar con categoría seleccionada desde sessionStorage
   useEffect(() => {
-    // Check if a category was selected from Categories component
     const category = sessionStorage.getItem('selectedCategory');
     if (category) {
       setSelectedCategory(category);
@@ -131,13 +141,18 @@ export default function Catalog() {
     }
   }, []);
 
-  useEffect(() => {
+  // Filtrar productos en tiempo real
+  const filteredProducts = useMemo(() => {
     if (selectedCategory) {
-      setFilteredProducts(products.filter(p => p.category === selectedCategory));
-    } else {
-      setFilteredProducts(products);
+      return firestoreProducts.filter(p => p.category === selectedCategory);
     }
-  }, [selectedCategory]);
+    return firestoreProducts;
+  }, [firestoreProducts, selectedCategory]);
+
+  // Obtener categorías únicas en tiempo real
+  const categories = useMemo(() => {
+    return Array.from(new Set(firestoreProducts.map(p => p.category)));
+  }, [firestoreProducts]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -158,9 +173,6 @@ export default function Catalog() {
       transition: { duration: 0.6 },
     },
   };
-
-  // Get unique categories
-  const categories = Array.from(new Set(products.map(p => p.category)));
 
   return (
     <section id="catalog" className="py-24 bg-secondary/30">
@@ -196,9 +208,9 @@ export default function Catalog() {
           >
             Todos
           </motion.button>
-          {categories.map((category) => (
+          {categories.map((category, idx) => (
             <motion.button
-              key={category}
+              key={`category-${category}-${idx}`}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setSelectedCategory(category)}
@@ -221,11 +233,14 @@ export default function Catalog() {
           viewport={{ once: true, margin: '-100px' }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
-          {filteredProducts.map((product) => (
-            <motion.div key={product.id} variants={itemVariants}>
-              <ProductCard product={product} />
-            </motion.div>
-          ))}
+          {filteredProducts.map((product, idx) => {
+            const keyValue = product._firestoreId || `product-${product.id}-${idx}`;
+            return (
+              <motion.div key={keyValue} variants={itemVariants}>
+                <ProductCard product={product} onProductClick={handleProductClick} />
+              </motion.div>
+            );
+          })}
         </motion.div>
 
         {/* Empty State */}
@@ -250,10 +265,17 @@ export default function Catalog() {
           className="mt-20 pt-12 border-t border-border text-center"
         >
           <p className="text-lg text-foreground/70 font-light">
-            Mostrando <span className="text-accent font-medium">{filteredProducts.length}</span> de <span className="text-accent font-medium">{products.length}</span> productos disponibles.
+            Mostrando <span className="text-accent font-medium">{filteredProducts.length}</span> de <span className="text-accent font-medium">{firestoreProducts.length}</span> productos disponibles.
           </p>
         </motion.div>
       </div>
+
+      {/* Product Detail Modal */}
+      <ProductDetailModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </section>
   );
 }

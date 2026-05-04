@@ -18,6 +18,7 @@ export interface Product {
   volume?: string;
   type: 'single';
   stock?: number;
+  _firestoreId?: string;
 }
 
 export interface User {

@@ -38,7 +38,7 @@ function TestimonialCard({ testimonial }: { testimonial: (typeof testimonials)[0
       <div className="flex gap-1 mb-4">
         {[...Array(testimonial.rating)].map((_, i) => (
           <Star
-            key={i}
+            key={`star-${testimonial.id}-${i}`}
             size={16}
             className="fill-accent text-accent"
           />
