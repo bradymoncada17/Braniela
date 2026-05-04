@@ -1,0 +1,259 @@
+import { motion } from 'framer-motion';
+import { MessageCircle } from 'lucide-react';
+import { products } from '@/data/products';
+import { useState, useEffect } from 'react';
+
+interface ProductCardProps {
+  product: (typeof products)[0];
+}
+
+function ProductCard({ product }: ProductCardProps) {
+  const whatsappMessage = `Hola Braniela, me interesa el perfume ${product.name} de ${product.brand}. Me gustaría conocer más detalles y disponibilidad.`;
+  const whatsappLink = `https://wa.me/3041100640?text=${encodeURIComponent(whatsappMessage)}`;
+
+  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+
+  return (
+    <motion.div
+      whileHover={{ y: -8 }}
+      className="card-luxury group"
+    >
+      {/* Image Container */}
+      <div className="relative h-96 overflow-hidden bg-white flex items-center justify-center border-b border-gray-100">
+        <motion.img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-full object-contain p-6 bg-white"
+          whileHover={{ scale: 1.08 }}
+          transition={{ duration: 0.6 }}
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            img.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22%3E%3Crect fill=%22%23f5f5f5%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2212%22 fill=%22%23999%22 text-anchor=%22middle%22 dy=%22.3em%22%3EImagen no disponible%3C/text%3E%3C/svg%3E';
+          }}
+        />
+        {/* Category Badge */}
+        <div className="absolute top-4 right-4 bg-accent text-accent-foreground px-4 py-2 rounded-sm text-xs font-medium tracking-wide">
+          {product.category}
+        </div>
+        {/* Discount Badge */}
+        {discount > 0 && (
+          <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-sm text-xs font-bold">
+            -{discount}%
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        {/* Brand and Title */}
+        <p className="text-xs text-accent font-medium tracking-widest mb-2">
+          {product.brand}
+        </p>
+        <h3 className="text-xl font-light text-foreground mb-2">
+          {product.name}
+        </h3>
+
+        {/* Description */}
+        <p className="text-sm text-foreground/70 font-light mb-4 line-clamp-2">
+          {product.description}
+        </p>
+
+        {/* Volume */}
+        <p className="text-xs text-foreground/60 font-light mb-4">
+          Volumen: {product.volume}
+        </p>
+
+        {/* Notes (if available) */}
+        {product.notes && (
+          <div className="space-y-2 mb-4 text-xs">
+            {product.notes.top && (
+              <div>
+                <span className="text-accent font-medium">Salida:</span>
+                <p className="text-foreground/70 font-light">{product.notes.top}</p>
+              </div>
+            )}
+            {product.notes.heart && (
+              <div>
+                <span className="text-accent font-medium">Corazón:</span>
+                <p className="text-foreground/70 font-light">{product.notes.heart}</p>
+              </div>
+            )}
+            {product.notes.base && (
+              <div>
+                <span className="text-accent font-medium">Fondo:</span>
+                <p className="text-foreground/70 font-light">{product.notes.base}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Price */}
+        <div className="mb-6 flex items-baseline gap-3">
+          <span className="text-2xl font-light text-foreground">
+            ${product.price.toLocaleString()}
+          </span>
+          {product.originalPrice > product.price && (
+            <span className="text-sm text-foreground/50 line-through">
+              ${product.originalPrice.toLocaleString()}
+            </span>
+          )}
+        </div>
+
+        {/* Button */}
+        <div className="flex gap-3">
+          <motion.a
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-sm font-medium text-sm transition-all duration-300 hover:shadow-lg"
+          >
+            <MessageCircle size={16} />
+            Comprar
+          </motion.a>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+export default function Catalog() {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [filteredProducts, setFilteredProducts] = useState(products);
+
+  useEffect(() => {
+    // Check if a category was selected from Categories component
+    const category = sessionStorage.getItem('selectedCategory');
+    if (category) {
+      setSelectedCategory(category);
+      sessionStorage.removeItem('selectedCategory');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      setFilteredProducts(products.filter(p => p.category === selectedCategory));
+    } else {
+      setFilteredProducts(products);
+    }
+  }, [selectedCategory]);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6 },
+    },
+  };
+
+  // Get unique categories
+  const categories = Array.from(new Set(products.map(p => p.category)));
+
+  return (
+    <section id="catalog" className="py-24 bg-secondary/30">
+      <div className="container">
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true, margin: '-100px' }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-5xl md:text-6xl font-light text-foreground mb-4">
+            Catálogo de Productos
+          </h2>
+          <div className="w-16 h-px bg-accent mx-auto mb-6" />
+          <p className="text-lg text-foreground/70 font-light max-w-2xl mx-auto">
+            Descubre nuestra colección exclusiva de perfumes de lujo de las mejores marcas internacionales.
+          </p>
+        </motion.div>
+
+        {/* Category Filter */}
+        <div className="flex flex-wrap justify-center gap-4 mb-12">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setSelectedCategory(null)}
+            className={`px-6 py-2 rounded-sm font-medium text-sm transition-all duration-300 ${
+              selectedCategory === null
+                ? 'bg-accent text-accent-foreground'
+                : 'bg-secondary text-foreground hover:bg-secondary/80'
+            }`}
+          >
+            Todos
+          </motion.button>
+          {categories.map((category) => (
+            <motion.button
+              key={category}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-6 py-2 rounded-sm font-medium text-sm transition-all duration-300 ${
+                selectedCategory === category
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-secondary text-foreground hover:bg-secondary/80'
+              }`}
+            >
+              {category}
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Products Grid */}
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: '-100px' }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+        >
+          {filteredProducts.map((product) => (
+            <motion.div key={product.id} variants={itemVariants}>
+              <ProductCard product={product} />
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Empty State */}
+        {filteredProducts.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <p className="text-foreground/70 font-light text-lg">
+              No hay productos disponibles en esta categoría.
+            </p>
+          </motion.div>
+        )}
+
+        {/* Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+          className="mt-20 pt-12 border-t border-border text-center"
+        >
+          <p className="text-lg text-foreground/70 font-light">
+            Mostrando <span className="text-accent font-medium">{filteredProducts.length}</span> de <span className="text-accent font-medium">{products.length}</span> productos disponibles.
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
