@@ -5,9 +5,11 @@ Esta es la forma más simple y directa de desplegar tu sitio en GitHub Pages sin
 ## 📋 Requisitos
 
 - Git instalado
-- Node.js 18+ instalado
+- **Node.js 20.x o superior** instalado (requerido por Vite 7.3.2)
 - pnpm instalado (`npm install -g pnpm`)
 - Cuenta de GitHub
+
+**Nota**: Vite 7.3.2 requiere Node.js 20.19+ o 22.12+. Si tienes Node.js 18, actualiza a 20.x o superior.
 
 ## 🚀 Pasos para Desplegar
 
@@ -19,11 +21,24 @@ Esta es la forma más simple y directa de desplegar tu sitio en GitHub Pages sin
 4. **Visibilidad**: Selecciona **Public**
 5. Click en "Create repository"
 
-### Paso 2: Clonar y Configurar Localmente
+### Paso 2: Verificar Node.js
+
+```bash
+# Verificar version de Node.js
+node --version
+# Debe mostrar v20.x.x o superior
+
+# Si tienes Node.js 18, actualiza:
+# macOS: brew install node@20
+# Windows: Descarga desde https://nodejs.org/
+# Linux: sudo apt-get install nodejs=20.x
+```
+
+### Paso 3: Clonar y Configurar Localmente
 
 ```bash
 # Descomprime el ZIP
-unzip braniela-github-pages-complete-fixed.zip
+unzip braniela-github-pages-manual.zip
 cd braniela-github-pages
 
 # Inicializar Git
@@ -35,7 +50,7 @@ git remote add origin https://github.com/tu-usuario/braniela.git
 git push -u origin main
 ```
 
-### Paso 3: Compilar el Proyecto
+### Paso 4: Compilar el Proyecto
 
 ```bash
 # Instalar dependencias
@@ -47,7 +62,7 @@ pnpm build
 
 Esto genera la carpeta `dist/public/` con todos los archivos compilados.
 
-### Paso 4: Crear Rama gh-pages
+### Paso 5: Crear Rama gh-pages
 
 ```bash
 # Crear rama gh-pages vacía
@@ -69,7 +84,7 @@ git commit -m "Deploy to GitHub Pages"
 git push origin gh-pages
 ```
 
-### Paso 5: Configurar GitHub Pages
+### Paso 6: Configurar GitHub Pages
 
 1. Ve a tu repositorio en GitHub
 2. Click en **Settings** (Configuración)
@@ -79,7 +94,7 @@ git push origin gh-pages
    - **Folder**: `/ (root)`
 5. Click en "Save"
 
-### Paso 6: Verificar Despliegue
+### Paso 7: Verificar Despliegue
 
 - Espera 1-2 minutos
 - Tu sitio estará disponible en: **`https://tu-usuario.github.io/braniela`**
